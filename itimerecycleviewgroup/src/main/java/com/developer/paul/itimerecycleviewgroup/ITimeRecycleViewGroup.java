@@ -63,6 +63,9 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
     private float originX, originY;
     private float newX, newY, preX, preY;
 
+    private float totalMoveY = 0.0f;
+    private float totalMoveX = 0.0f;
+
     public ITimeRecycleViewGroup(Context context, int NUM_SHOW) {
         super(context);
         this.NUM_SHOW = NUM_SHOW;
@@ -173,13 +176,22 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
             case SCROLL_DOWN:
             case SCROLL_UP:
                 if (ScrollHelper.shouldFling(mVelocityY)){
-                    setStatus(VERTICAL_FLING);
                     int distance = scrollPos[1];
                     distance = getInBoundY(distance);
+                    if (isFalseMove(distance, scrollDir)){
+                        Log.i("up", "touchUpPostCheck: distance" + distance + " , " + scrollDir);
+                        return;
+                    }
+                    setStatus(VERTICAL_FLING);
                     scrollByYSmoothly(distance,500);
                 }
                 break;
         }
+    }
+
+    // ensure y and dir are same
+    private boolean isFalseMove(int y ,int dir){
+        return y * dir < 0;
     }
 
     private AwesomeViewGroup getFirstShownAwesomeViewGroup(List<AwesomeViewGroup> awesomeViewgroups){
@@ -313,10 +325,18 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
             if (lp.bottom + y < lp.parentHeight){
                 // reach bottom, stop up
                 realY = lp.parentHeight - lp.bottom;
+
+                if(lp.top + realY < 0){ // because the dir is not accurate, need check
+                    return 0;
+                }
             }
         }else if (scrollDir == SCROLL_DOWN){
             if (lp.top + y > 0){
                 realY = 0 - lp.top;
+
+                if (lp.bottom + realY < lp.parentHeight){
+                    return 0;
+                }
             }
         }
         return realY;
@@ -382,14 +402,14 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
                         preX = newX;
                     }else if (scrollModel == SCROLL_VERTICAL){
                         setStatus(VERTICAL_MOVE);
-                        float moveY = newY - preY;
+                        int moveY = (int)newY - (int)preY;
 
                         if (moveY > 0){
                             scrollDir = SCROLL_DOWN;
                         }else if (moveY < 0){
                             scrollDir = SCROLL_UP;
                         }
-                        scrollByY((int) moveY);
+                        scrollByY(moveY);
                         preY = newY;
                     }
                     mVelocityTracker.addMovement(ev);
@@ -464,7 +484,6 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
                             scrollDir = SCROLL_LEFT;
                         }
 
-                        LogUtil.log("onTouchEvent",moveX + "");
                         scrollByX((int) moveX);
                         preX = newX;
                     } else if (scrollModel == SCROLL_VERTICAL) {
@@ -489,6 +508,7 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
             case MotionEvent.ACTION_UP:
                 newX = getEventXFilterOutside(event);
                 newY = event.getY();
+
                 if (scrollOverTouchSlop){
                     touchUpPostCheck();
                 }
@@ -525,10 +545,18 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
             AwesomeViewGroup.AwesomeLayoutParams lp = (AwesomeViewGroup.AwesomeLayoutParams) child.getLayoutParams();
             child.layout(lp.left, lp.top, lp.right, lp.bottom);
         }
+
+        LogUtil.logAwesomes(awesomeViewGroupList);
     }
 
     @Override
     public void scrollByX(int x) {
+        if (x > 0){
+            scrollDir = SCROLL_RIGHT;
+        }else if (x < 0){
+            scrollDir = SCROLL_LEFT;
+        }
+
         for (AwesomeViewGroup awesomeViewGroup: awesomeViewGroupList){
             AwesomeViewGroup.AwesomeLayoutParams lp = (AwesomeViewGroup.AwesomeLayoutParams) awesomeViewGroup.getLayoutParams();
             lp.left += x;
@@ -537,8 +565,10 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
         }
 
         if (onScroll!=null){
-            onScroll.onHorizontalScroll(x, (int) (newX - originX));
+            onScroll.onHorizontalScroll(x, (int) totalMoveX);
         }
+
+        totalMoveX += x;
 
         moveXPostCheck(awesomeViewGroupList, scrollDir);
     }
@@ -546,6 +576,11 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
     @Override
     public void scrollByY(int y) {
         // precheck the validation of y
+        if (y > 0){
+            scrollDir = SCROLL_DOWN;
+        }else if (y<0){
+            scrollDir = SCROLL_UP;
+        }
         y = getInBoundY(y);
         if (y==0){
             return;
@@ -557,9 +592,15 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
             awesomeViewGroup.layout(lp.left, lp.top, lp.right, lp.bottom);
         }
 
+
         if (onScroll!=null){
-            onScroll.onVerticalScroll(y, (int) (newY - originY));
+            Log.i("onScroll", "scrollByY1: " + y + " totalMove: " + totalMoveY + " dir : " + scrollDir);
+            LogUtil.logAwesomes(awesomeViewGroupList);
+            onScroll.onVerticalScroll(y, (int) totalMoveY);
         }
+
+        totalMoveY += y;
+
     }
 
     @Override
@@ -650,6 +691,9 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
                 int nowValue = (int) animation.getAnimatedValue();
                 int offset = (nowValue - preAniY);
                 newY = preY + offset;
+                if (offset!=0) {
+                    Log.i("ani", "onAnimationUpdate: " + offset);
+                }
                 scrollByY(offset);
                 preAniY=nowValue;
                 preY = newY;
