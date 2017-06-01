@@ -160,6 +160,8 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
             case SCROLL_RIGHT:
                 setStatus(HORIZONTAL_FLING); // should fling or scroll to closet are both horizontal fling
                 if (ScrollHelper.shouldFling(mVelocityX)){
+                    LogUtil.log("scrollToCloset", "in fling");
+
                     int distance = scrollPos[0];
                     //float compensite, for inaccurate calculate
                     distance += compensateDistance(distance, awesomeViewGroupList);
@@ -206,6 +208,7 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
 
     private void scrollToClosestPosition(List<AwesomeViewGroup> awesomeViewGroups){
         int dis = childNeedsScrollToNearestPosition(awesomeViewGroups);
+        LogUtil.log("scrollToCloset : " , dis + "");
         scrollByXSmoothly(dis);
     }
 
@@ -419,7 +422,23 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
 
                     return true;
                 }
+                break;
 
+            case MotionEvent.ACTION_UP:
+                // when fling, and touch on this, child might consume this event
+                // so also need to action up on the Intercepted event.
+                LogUtil.log("upup", "onInter");
+                newX = getEventXFilterOutside(ev);
+                newY = ev.getY();
+
+                LogUtil.log("upup", scrollDir + "");
+                if (scrollOverTouchSlop){
+                    touchUpPostCheck();
+                }
+
+                scrollOverTouchSlop = false;
+                preX = newX;
+                preY = newY;
                 break;
         }
 
@@ -509,6 +528,7 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
                 newX = getEventXFilterOutside(event);
                 newY = event.getY();
 
+                LogUtil.log("upup", scrollDir + "");
                 if (scrollOverTouchSlop){
                     touchUpPostCheck();
                 }
