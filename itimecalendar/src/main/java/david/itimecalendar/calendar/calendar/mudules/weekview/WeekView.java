@@ -7,15 +7,12 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
-import android.util.Log;
-import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
-import com.developer.paul.recycleviewgroup.RecycleViewGroup;
-import com.github.sundeepk.compactcalendarview.DensityUtil;
+import com.developer.paul.itimerecycleviewgroup.ITimeRecycleViewGroup;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -84,7 +81,7 @@ public class WeekView extends FrameLayout{
     private WeekViewHeaderAdapter headerAdapter;
     protected Context context;
     protected DayViewBody dayViewBody;
-    protected RecycleViewGroup headerRG;
+    protected ITimeRecycleViewGroup headerRG;
 
     protected float headerHeight = 200;
     protected float leftBarWidth = 50;
@@ -107,8 +104,8 @@ public class WeekView extends FrameLayout{
     }
 
     private void setUpHeader(){
-        headerRG = new RecycleViewGroup(context, (int)cellHeight, NUM_CELL);
-        headerRG.setOnSetting(new RecycleViewGroup.OnSetting() {
+        headerRG = new ITimeRecycleViewGroup(context, NUM_CELL);
+        headerRG.setOnSetting(new ITimeRecycleViewGroup.OnSetting() {
             @Override
             public int getItemHeight(int i) {
                 int childMaxHeight = MeasureSpec.getSize(i);
@@ -121,7 +118,7 @@ public class WeekView extends FrameLayout{
         headerRG.setLayoutParams(params);
         headerAdapter = new WeekViewHeaderAdapter(context);
         headerRG.setAdapter(headerAdapter);
-        headerRG.setDisableScroll(true);
+//        headerRG.setDisableScroll(true);
         container.addView(headerRG);
     }
 
@@ -135,7 +132,7 @@ public class WeekView extends FrameLayout{
         container.addView(dayViewBodyContainer, new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         dayViewBody = new DayViewBody(context, viewAttrs);
-        dayViewBody.setOnScrollListener(new RecycleViewGroup.OnScroll<DayViewBodyCell>() {
+        dayViewBody.setOnScrollListener(new ITimeRecycleViewGroup.OnScroll<DayViewBodyCell>() {
             @Override
             public void onPageSelected(DayViewBodyCell view) {
 
@@ -143,7 +140,7 @@ public class WeekView extends FrameLayout{
 
             @Override
             public void onHorizontalScroll(int dx, int preOffsetX) {
-                headerRG.moveXBy(dx);
+                headerRG.scrollByX(dx);
             }
 
             @Override
@@ -156,9 +153,9 @@ public class WeekView extends FrameLayout{
         this.dayViewBodyContainer.addView(dayViewBody, bodyParams);
     }
 
-    public void setScrollInterface(RecycleViewGroup.ScrollInterface scrollInterface){
-        dayViewBody.setScrollInterface(scrollInterface);
-    }
+//    public void setScrollInterface(ITimeRecycleViewGroup.ScrollInterface scrollInterface){
+//        dayViewBody.setScrollInterface(scrollInterface);
+//    }
 
     public void scrollToDate(Date date){
         this.headerScrollToDate(date);
@@ -190,10 +187,10 @@ public class WeekView extends FrameLayout{
     }
 
 
-    public void setDisableCellScroll(boolean isDisabled){
-        headerRG.setDisableCellScroll(isDisabled);
-        dayViewBody.setDisableCellScroll(isDisabled);
-    }
+//    public void setDisableCellScroll(boolean isDisabled){
+//        headerRG.setDisableCellScroll(isDisabled);
+//        dayViewBody.setDisableCellScroll(isDisabled);
+//    }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {

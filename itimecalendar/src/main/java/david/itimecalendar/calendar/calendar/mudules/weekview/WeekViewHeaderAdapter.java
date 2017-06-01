@@ -1,17 +1,13 @@
 package david.itimecalendar.calendar.calendar.mudules.weekview;
 
 import android.content.Context;
-import android.graphics.Color;
-import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.developer.paul.recycleviewgroup.ITimeAdapter;
-import com.github.sundeepk.compactcalendarview.DensityUtil;
+import com.developer.paul.itimerecycleviewgroup.ITimeAdapter;
 
 import java.util.Calendar;
 
-import david.itimecalendar.calendar.calendar.mudules.monthview.DayViewBodyCell;
 import david.itimecalendar.calendar.util.MyCalendar;
 
 /**

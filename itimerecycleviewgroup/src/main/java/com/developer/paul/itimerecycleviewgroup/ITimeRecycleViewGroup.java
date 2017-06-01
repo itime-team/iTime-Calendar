@@ -5,6 +5,8 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Color;
 import android.os.Handler;
+import android.support.annotation.FloatRange;
+import android.support.annotation.Nullable;
 import android.support.v4.view.MotionEventCompat;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -12,6 +14,7 @@ import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.Scroller;
 
@@ -24,7 +27,7 @@ import java.util.List;
 
 public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface{
     private List<AwesomeViewGroup> awesomeViewGroupList = new ArrayList<>();
-    private final static int NUM_SHOW = 7;
+    private int NUM_SHOW = 7;
     int[] colors =new int[]{Color.RED, Color.BLUE, Color.GRAY, Color.YELLOW, Color.GREEN, Color.WHITE, Color.MAGENTA, Color.DKGRAY, Color.CYAN};
 
     private int viewHeight, viewWidth, childWidth, childHeight;
@@ -59,12 +62,9 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
     private float originX, originY;
     private float newX, newY, preX, preY;
 
-    // interface
-    private OnScroll onScroll;
-
-
-    public ITimeRecycleViewGroup(Context context) {
+    public ITimeRecycleViewGroup(Context context, int NUM_SHOW) {
         super(context);
+        this.NUM_SHOW = NUM_SHOW;
         init();
     }
 
@@ -133,7 +133,7 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
         if (pageChanged){
 //            LogUtil.logAwesomes(awesomeViewGroups);
             if (onScroll!=null){
-                onScroll.onPageSelected(getFirstShownAwesomeViewGroup(awesomeViewGroups));
+                onScroll.onPageSelected(getFirstShowItem());
             }
         }
     }
@@ -258,7 +258,12 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
         setMeasuredDimension(viewWidth, viewHeight);
 
         childWidth = viewWidth/NUM_SHOW;
-        childHeight = 2 * viewHeight;
+
+        if (onSetting==null) {
+            childHeight = 2 * viewHeight;
+        }else{
+            childHeight = onSetting.getItemHeight(heightMeasureSpec);
+        }
 
         int childWidthSpec = MeasureSpec.makeMeasureSpec(childWidth, MeasureSpec.EXACTLY);
         int childHeightSpec = MeasureSpec.makeMeasureSpec(childHeight, MeasureSpec.EXACTLY);
@@ -316,11 +321,15 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
         }
         switch (action){
             case MotionEvent.ACTION_DOWN:
+                if (mVelocityTracker==null){
+                    mVelocityTracker = VelocityTracker.obtain();
+                }else{
+                    mVelocityTracker.clear();
+                }
                 break;
             case MotionEvent.ACTION_MOVE:
                 newX = ev.getX();
                 newY = ev.getY();
-                LogUtil.log("onIntercept","MOVE");
                 if (!scrollOverTouchSlop){
                     if (mTouchSlop <= Math.abs(newX - preX)){
                         setStatus(HORIZONTAL_MOVE);
@@ -532,11 +541,13 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
         scrollByXSmoothly(x, 200);
     }
 
-    @Override
-    public void scrollByXSmoothly(int x, long duration) {
+    public void scrollByXSmoothly(int x, long duration, @Nullable Animator.AnimatorListener animatorListener){
         ValueAnimator animator = ValueAnimator.ofInt(0, x);
         animator.setDuration(duration);
         animator.setInterpolator(new DecelerateInterpolator());
+        if(animatorListener!=null){
+            animator.addListener(animatorListener);
+        }
         animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             int preAniX = 0;
             int totalScroll = 0;
@@ -585,6 +596,11 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
             }
         });
         animator.start();
+    }
+
+    @Override
+    public void scrollByXSmoothly(int x, long duration) {
+        scrollByXSmoothly(x, duration, null);
     }
 
     @Override
@@ -645,14 +661,66 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
     public void scrollByYSmoothly(int y) {
         scrollByYSmoothly(y, 200);
     }
+    /*** new V ***/
 
-    public interface OnScroll{
-        void onPageSelected(View v);
+//    public interface OnScroll{
+//        void onPageSelected(View v);
+//        void onHorizontalScroll(int dx, int preOffsetX);
+//        void onVerticalScroll(int dy, int preOffsetY);
+//    }
+//
+//    public void setOnScroll(OnScroll onScroll) {
+//        this.onScroll = onScroll;
+//    }
+
+    /*** old V ***/
+    private OnScroll onScroll;
+
+    public void setOnScrollListener(OnScroll onScroll){
+        this.onScroll = onScroll;
+    }
+
+    public interface OnSetting{
+        int getItemHeight(int heightSpec);
+    }
+
+    private OnSetting onSetting;
+
+    public void setOnSetting(OnSetting onSetting){
+        this.onSetting = onSetting;
+    }
+
+    public interface OnScroll<V>{
+        void onPageSelected(V view);
         void onHorizontalScroll(int dx, int preOffsetX);
         void onVerticalScroll(int dy, int preOffsetY);
     }
 
-    public void setOnScroll(OnScroll onScroll) {
-        this.onScroll = onScroll;
+    private ITimeAdapter adapter;
+
+    public void setAdapter(ITimeAdapter adapter){
+        this.adapter = adapter;
+        adapter.setAwesomeViewGroups(awesomeViewGroupList);
+        adapter.onCreateViewHolders();
+    }
+
+    public void smoothMoveWithOffset(int moveOffset, @Nullable Animator.AnimatorListener animatorListener){
+        if (moveOffset == 0){
+            return;
+        }
+        int distance = (-1) * moveOffset * childWidth;
+        scrollByXSmoothly(distance, 200,animatorListener);
+    }
+
+    public void moveWithOffset(int moveOffset){
+        if (moveOffset == 0){
+            return;
+        }
+        int distance = (-1) * moveOffset * childWidth;
+        scrollByX(distance);
+    }
+
+    public View getFirstShowItem(){
+        return getFirstShownAwesomeViewGroup(awesomeViewGroupList).getItem();
     }
 }

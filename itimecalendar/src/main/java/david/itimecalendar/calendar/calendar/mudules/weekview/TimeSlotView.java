@@ -8,7 +8,7 @@ import android.util.AttributeSet;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import com.developer.paul.recycleviewgroup.RecycleViewGroup;
+import com.developer.paul.itimerecycleviewgroup.ITimeRecycleViewGroup;
 import com.github.sundeepk.compactcalendarview.ITimeInnerCalendar.InnerCalendarTimeslotPackage;
 
 import java.util.ArrayList;
@@ -48,7 +48,7 @@ public class TimeSlotView extends WeekView {
     }
 
     private void initViews(){
-        dayViewBody.setOnScrollListener(new RecycleViewGroup.OnScroll<DayViewBodyCell>() {
+        dayViewBody.setOnScrollListener(new ITimeRecycleViewGroup.OnScroll<DayViewBodyCell>() {
             @Override
             public void onPageSelected(DayViewBodyCell view) {
                 innerCalView.setShowMonth(view.getCalendar().getCalendar().getTime());
@@ -56,7 +56,7 @@ public class TimeSlotView extends WeekView {
 
             @Override
             public void onHorizontalScroll(int dx, int preOffsetX) {
-                headerRG.moveXBy(dx);
+                headerRG.scrollByX(dx);
             }
 
             @Override
