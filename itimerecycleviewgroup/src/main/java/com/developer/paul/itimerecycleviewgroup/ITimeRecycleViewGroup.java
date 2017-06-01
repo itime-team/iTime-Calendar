@@ -9,6 +9,7 @@ import android.support.annotation.FloatRange;
 import android.support.annotation.Nullable;
 import android.support.v4.view.MotionEventCompat;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
@@ -111,6 +112,10 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
                 // redraw must before move, because of the index
                 reDrawViewGroupToLast(tempList.get(i), awesomeViewGroups.get(viewGroupSize - 1));
                 moveViewGroupToLast(tempList.get(i), awesomeViewGroups);
+//                Log.i("aaa", "moveXPostCheck: left : " + tempList.get(i).getInRecycledViewIndex());
+                if (adapter!=null) {
+                    adapter.notifyDataSetChanged(tempList.get(i));
+                }
                 pageChanged = true;
 
             }
@@ -126,6 +131,10 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
                 // redraw must before move, because of the index
                 reDrawViewGroupToFirst(tempList.get(i), awesomeViewGroups.get(0));
                 moveViewGroupToFirst(tempList.get(i), awesomeViewGroups);
+//                Log.i("aaa", "moveXPostCheck: right : git sta" + tempList.get(i).getInRecycledViewIndex());
+                if (adapter!=null) {
+                    adapter.notifyDataSetChanged(tempList.get(i));
+                }
                 pageChanged = true;
             }
         }
@@ -321,11 +330,28 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
         }
         switch (action){
             case MotionEvent.ACTION_DOWN:
-                if (mVelocityTracker==null){
+                if (status == HORIZONTAL_FLING){
+                    scrollOverTouchSlop = true;
+                    scrollModel = SCROLL_HORIZONTAL;
+                }
+
+                if (status == VERTICAL_FLING){
+                    scrollOverTouchSlop = true;
+                    scrollModel = SCROLL_VERTICAL;
+                }
+                setStatus(START);
+                if (mVelocityTracker == null){
                     mVelocityTracker = VelocityTracker.obtain();
                 }else{
                     mVelocityTracker.clear();
                 }
+                mVelocityX = 0;
+                mVelocityY = 0;
+
+                originX = ev.getX();
+                originY = ev.getY();
+                preX = ev.getX();
+                preY = ev.getY();
                 break;
             case MotionEvent.ACTION_MOVE:
                 newX = ev.getX();
@@ -582,7 +608,7 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
             @Override
             public void onAnimationEnd(Animator animation) {
                 setStatus(STOP);
-                LogUtil.logAwesomes(awesomeViewGroupList);
+//                LogUtil.logAwesomes(awesomeViewGroupList);
             }
 
             @Override
@@ -641,7 +667,7 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
             @Override
             public void onAnimationEnd(Animator animation) {
                 setStatus(STOP);
-                LogUtil.logAwesomes(awesomeViewGroupList);
+//                LogUtil.logAwesomes(awesomeViewGroupList);
             }
 
             @Override
