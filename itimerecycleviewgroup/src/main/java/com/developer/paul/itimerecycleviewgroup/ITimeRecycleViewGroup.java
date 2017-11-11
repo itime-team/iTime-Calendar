@@ -137,6 +137,8 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
                 int sign = offset / Math.abs(offset);
                 offset = Math.abs(offset) % childWidth * sign;
             }
+
+
         }
     }
 
@@ -310,7 +312,7 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
             }
         }
 
-        moveXPostCheck(awesomeViewGroupList, scrollDir);
+//        moveXPostCheck(awesomeViewGroupList, scrollDir);
         setMeasuredDimension(viewWidth, viewHeight);
 
     }
@@ -632,8 +634,11 @@ public class ITimeRecycleViewGroup extends ViewGroup implements RecycleInterface
             lp.left = (i - 1) * childWidth + offset;
             lp.right = lp.left + childWidth;
             lp.bottom = lp.top + lp.height;
+            awesomeViewGroup.requestLayout();
         }
-        requestLayout();
+
+        moveXPostCheck(awesomeViewGroupList, scrollDir);
+//        requestLayout();
     }
 
     @Override
