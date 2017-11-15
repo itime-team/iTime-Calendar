@@ -1,1 +1,1 @@
-include ':app', ':timeslotcalendar', ':itimecalendar', ':itimerecycleviewgroup'
+include ':app', ':timeslotcalendar', ':itimecalendar', ':itimerecycleviewgroup', ':swipper'
